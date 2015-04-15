@@ -1,2 +1,10 @@
-venv
+# AWS eb
+.elasticbeanstalk/
+*.zip
+
+# Virtualenv
 *.pyc
+venv
+
+# cred
+cred_*.py
