@@ -3,5 +3,5 @@ pg8000
 Flask-SQLAlchemy
 flask-socketio
 boto
-#requests[security]
+requests[security]
 tweepy
