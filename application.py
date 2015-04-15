@@ -1,6 +1,8 @@
 from gevent import monkey
 monkey.patch_all()
 
+import tweepy
+import re
 from flask import Flask, jsonify, render_template, request, session
 from flask.ext.socketio import SocketIO, emit
 from flask.ext.sqlalchemy import SQLAlchemy
@@ -10,6 +12,9 @@ import sys
 import os
 from word_list import words
 from functools import partial
+import cred_twitter as twc
+import boto.sqs
+import cred_aws as aws
 
 
 # Flask app object
@@ -29,6 +34,33 @@ class Twit(db.Model):
     time = db.Column(db.DateTime)
     words = db.Column(db.String(256))
 
+class CustomStreamListener(tweepy.StreamListener):
+    # splitter function
+    splitter = re.compile(r'\W+')
+
+    def on_status(self, status):
+        if not status.coordinates:
+            return
+        longitude, latitude = status.coordinates['coordinates']
+        text = status.text.encode('utf-8').lower()
+        words = filter(bool, self.splitter.split(text))
+        time = status.created_at
+        text = ' '.join(words)
+        # clean db
+        clean_old_records()
+        # add new twit to db
+        twit = Twit(longitude=longitude, latitude=latitude, time=time, words=text)
+        db.session.add(twit)
+        db.session.commit()
+
+    def on_error(self, status_code):
+        print >> sys.stderr, 'Error with status code:', status_code
+        return True # Don't kill the stream
+
+    def on_timeout(self):
+        print >> sys.stderr, 'Timeout...'
+        return True # Don't kill the stream
+
 # db.drop_all()
 # db.create_all()
 
@@ -36,15 +68,23 @@ class Twit(db.Model):
 socketio = SocketIO(app)
 
 # Twitter Stream API
-import twit_daemon
-
+def get_tweet():
+    while True:
+        try:
+            auth = tweepy.OAuthHandler(twc.consumer_key, twc.consumer_secret)
+            auth.set_access_token(twc.access_token, twc.access_token_secret)
+            sapi = tweepy.streaming.Stream(auth, CustomStreamListener())
+            sapi.filter(locations=[-130, -60, 70, 60], track=words)
+        except KeyboardInterrupt:  # on Ctrl-C, break
+            break
+        except:
+            pass
 
 @app.before_first_request
 def init():
     global daemon
     if not daemon:
-        bound_main = partial(f, 1)
-        daemon = Thread(target=bound_main)
+        daemon = Thread(target=get_tweet)
         daemon.start()
 
 # main pages
@@ -55,17 +95,17 @@ def index():
     return render_template('index.html', api_data=payload)
 
 
-@app.route('/data/<word>')
-def search(word):
-    result = []
-    cur = Twit.query.order_by(Twit.twit_id.desc()).limit(500)
-    for record in cur:
-        if word == '-ALL-' or word in record.words.split():
-            result.append({
-                'longitude': record.longitude,
-                'latitude': record.latitude
-            })
-    return jsonify(data=result)
+# @app.route('/data/<word>')
+# def search(word):
+#     result = []
+#     cur = Twit.query.order_by(Twit.twit_id.desc()).limit(500)
+#     for record in cur:
+#         if word == '-ALL-' or word in record.words.split():
+#             result.append({
+#                 'longitude': record.longitude,
+#                 'latitude': record.latitude
+#             })
+#     return jsonify(data=result)
 
 
 # Error Handler
