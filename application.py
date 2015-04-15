@@ -14,7 +14,13 @@ from word_list import words
 import cred_twitter as twc
 import boto.sqs
 import cred_aws as aws
+from boto.sqs.message import Message
 
+sqs = boto.sqs.connect_to_region(
+        "us-east-1",
+        aws_access_key_id=cred_aws.aws_access_key_id,
+        aws_secret_access_key=cred_aws.aws_secret_access_key)
+my_queue = sqs.get_queue('myqueue') or sqs.create_queue('myqueue')
 
 # Flask app object
 application = app = Flask(__name__)
@@ -49,13 +55,18 @@ class CustomStreamListener(tweepy.StreamListener):
             return
         longitude, latitude = status.coordinates['coordinates']
         text = status.text.encode('utf-8').lower()
+        # add new message to sqs
+        m = Message()
+        m.set_body(text)
+        my_queue.write(m)
+        # add new twit to db
         words = filter(bool, self.splitter.split(text))
         time = status.created_at
         text = ' '.join(words)
-        # add new twit to db
         twit = Twit(longitude=longitude, latitude=latitude, time=time, words=text)
         db.session.add(twit)
         db.session.commit()
+        
         print 'emit'
         socketio.emit('twit', {
             'text': text,
