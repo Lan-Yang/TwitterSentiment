@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Twitter Heat</title>
+    <script type="text/javascript"
+      src="//code.jquery.com/jquery-1.4.2.min.js">
+    </script>
+    <script type="text/javascript"
+      src="//cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js">
+    </script>
+    <script type="text/javascript"
+      src="https://maps.googleapis.com/maps/api/js?libraries=visualization&sensor=true_or_false?key=AIzaSyAuDjoxQgamvdu8TMzot9wT9KFJmSvXPYg">
+    </script>
+    <script type="text/javascript">
+    $(document).ready(function(){
+      namespace = '/twitter';
+      var socket = io.connect('http://' + document.domain + ':' + location.port + namespace);
+      socket.on('connect', function() {
+        socket.emit('my event', {data: 'I\'m connected!'});
+      });
+      socket.on('my response', function(msg) {
+        $('#log').append('<br>Received <' + msg.logitude + ', ' + msg.latitude + '>: ' + msg.text);
+      });
+    });
+    </script>
+    <!-- <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet"> -->
+  </head>
+  <body>
+    <!-- <div id="map-canvas"></div> -->
+    <div id="log"></div>
+  </body>
+</html>
