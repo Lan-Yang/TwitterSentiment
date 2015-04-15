@@ -18,7 +18,7 @@
       socket.on('connect', function() {
         socket.emit('my event', {data: 'I\'m connected!'});
       });
-      socket.on('my response', function(msg) {
+      socket.on('twit', function(msg) {
         $('#log').append('<br>Received <' + msg.logitude + ', ' + msg.latitude + '>: ' + msg.text);
       });
     });

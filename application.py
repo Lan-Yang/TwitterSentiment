@@ -52,23 +52,17 @@ class CustomStreamListener(tweepy.StreamListener):
         words = filter(bool, self.splitter.split(text))
         time = status.created_at
         text = ' '.join(words)
-        obj = {
-            'text': text,
-            'longitude': longitude,
-            'latitude': latitude,
-            'time': time
-        }
         # add new twit to db
         twit = Twit(longitude=longitude, latitude=latitude, time=time, words=text)
         db.session.add(twit)
         db.session.commit()
         print 'emit'
-        socketio.emit('my response', {
+        socketio.emit('twit', {
             'text': text,
             'longitude': longitude,
             'latitude': latitude,
             'time': time
-            }, namespace='/twitter')
+            })
 
     def on_error(self, status_code):
         print >> sys.stderr, 'Error with status code:', status_code
@@ -105,6 +99,9 @@ def index():
     payload = {'keywords': words}
     return render_template('index.html', api_data=payload)
 
+@socketio.on('connect', namespace='')
+def test_connect():
+    print 'Connected'
 
 # @app.route('/data/<word>')
 # def search(word):
