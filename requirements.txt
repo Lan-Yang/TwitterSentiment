@@ -1,0 +1,7 @@
+flask
+pg8000
+Flask-SQLAlchemy
+flask-socketio
+boto
+#requests[security]
+tweepy
