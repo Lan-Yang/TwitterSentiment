@@ -11,7 +11,6 @@ import cred_db
 import sys
 import os
 from word_list import words
-from functools import partial
 import cred_twitter as twc
 import boto.sqs
 import cred_aws as aws
@@ -34,6 +33,13 @@ class Twit(db.Model):
     time = db.Column(db.DateTime)
     words = db.Column(db.String(256))
 
+# db.drop_all()
+# db.create_all()
+
+# WebSocket
+socketio = SocketIO(app)
+
+# Daemon
 class CustomStreamListener(tweepy.StreamListener):
     # splitter function
     splitter = re.compile(r'\W+')
@@ -46,12 +52,23 @@ class CustomStreamListener(tweepy.StreamListener):
         words = filter(bool, self.splitter.split(text))
         time = status.created_at
         text = ' '.join(words)
-        # clean db
-        clean_old_records()
+        obj = {
+            'text': text,
+            'longitude': longitude,
+            'latitude': latitude,
+            'time': time
+        }
         # add new twit to db
         twit = Twit(longitude=longitude, latitude=latitude, time=time, words=text)
         db.session.add(twit)
         db.session.commit()
+        print 'emit'
+        socketio.emit('my response', {
+            'text': text,
+            'longitude': longitude,
+            'latitude': latitude,
+            'time': time
+            }, namespace='/twitter')
 
     def on_error(self, status_code):
         print >> sys.stderr, 'Error with status code:', status_code
@@ -60,12 +77,6 @@ class CustomStreamListener(tweepy.StreamListener):
     def on_timeout(self):
         print >> sys.stderr, 'Timeout...'
         return True # Don't kill the stream
-
-# db.drop_all()
-# db.create_all()
-
-# WebSocket
-socketio = SocketIO(app)
 
 # Twitter Stream API
 def get_tweet():

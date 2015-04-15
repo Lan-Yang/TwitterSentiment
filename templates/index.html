@@ -13,7 +13,7 @@
     <script src="https://maps.googleapis.com/maps/api/js?libraries=visualization&sensor=true_or_false?key=AIzaSyAuDjoxQgamvdu8TMzot9wT9KFJmSvXPYg" type="text/javascript"></script>
     <script>
     $(function(){
-      namespace = '/twitter';
+      namespace = '';
       var socket = io.connect('http://' + document.domain + ':' + location.port + namespace);
       socket.on('connect', function() {
         socket.emit('my event', {data: 'I\'m connected!'});
