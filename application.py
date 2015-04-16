@@ -11,8 +11,8 @@ import sys
 import os
 from word_list import words
 import cred_twitter as twc
-import boto.sqs
 import cred_aws
+import boto.sqs, boto.sns
 from boto.sqs.message import Message
 import json
 
@@ -21,6 +21,12 @@ sqs = boto.sqs.connect_to_region(
         aws_access_key_id=cred_aws.aws_access_key_id,
         aws_secret_access_key=cred_aws.aws_secret_access_key)
 my_queue = sqs.get_queue('myqueue') or sqs.create_queue('myqueue')
+
+sns = boto.sns.connect_to_region(
+        "us-east-1",
+        aws_access_key_id=cred_aws.aws_access_key_id,
+        aws_secret_access_key=cred_aws.aws_secret_access_key)
+topicarn = r"arn:aws:sns:us-east-1:239028447426:twit-senti"
 
 # Flask app object
 application = app = Flask(__name__)
@@ -120,6 +126,21 @@ def index():
 def on_connect(data):
     # print 'connect', data
     init()
+
+@app.route('/sns', methods=['POST'])
+def sns_endpoint():
+    '''http://160.39.7.94:5000/sns'''
+    data = json.loads(request.data)
+    if data['Type'] == 'SubscriptionConfirmation':
+        sns.confirm_subscription(topicarn, data['Token'])
+    elif data['Type'] == 'Notification':
+        msg = json.loads(data['Message'])
+        socketio.emit('sentiment', {
+            'id': msg['id'],
+            'sentiment': msg['senti']
+            })
+    # print request.data
+    return ""
 
 # @app.route('/data/<word>')
 # def search(word):
