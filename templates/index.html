@@ -67,6 +67,7 @@
       setSentiment();
     });
     socket.on('sentiment', function(msg) {
+      // console.log(msg);
       var tid = $.inArray(msg.id, idArray);
       if (tid < 0) return;
       if (msg.sentiment == 0) {  // 0 - negative, 1 - positive
@@ -75,7 +76,6 @@
         nPos += 1;
       }
       setSentiment();
-      // console.log(msg);
     });
   });
   </script>
