@@ -13,8 +13,9 @@ import os
 from word_list import words
 import cred_twitter as twc
 import boto.sqs
-import cred_aws as aws
+import cred_aws
 from boto.sqs.message import Message
+import json
 
 sqs = boto.sqs.connect_to_region(
         "us-east-1",
@@ -54,19 +55,25 @@ class CustomStreamListener(tweepy.StreamListener):
         if not status.coordinates:
             return
         longitude, latitude = status.coordinates['coordinates']
-        text = status.text.encode('utf-8').lower()
-        # add new message to sqs
-        m = Message()
-        m.set_body(text)
-        my_queue.write(m)
+        text0 = status.text.encode('utf-8')
+        
         # add new twit to db
-        words = filter(bool, self.splitter.split(text))
+        words = filter(bool, self.splitter.split(text0))
         time = status.created_at
         text = ' '.join(words)
         twit = Twit(longitude=longitude, latitude=latitude, time=time, words=text)
         db.session.add(twit)
         db.session.commit()
         
+        # add new message to sqs
+        m = Message()
+        sqs_m = {
+            'id':twit.twit_id,
+            'content':text
+        }
+        m.set_body(json.dumps(sqs_m))
+        my_queue.write(m)
+
         print 'emit'
         socketio.emit('twit', {
             'text': text,
