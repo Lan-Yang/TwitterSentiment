@@ -65,6 +65,7 @@ class CustomStreamListener(tweepy.StreamListener):
 
         if count > 5000:
             Twit.query.delete()
+            db.session.commit()
             return True
 
         # add new twit to db
