@@ -1,6 +1,7 @@
 import boto.sqs
 from boto.sqs.message import Message
 import cred_aws
+import json
 
 sqs = boto.sqs.connect_to_region(
         "us-east-1",
@@ -12,7 +13,11 @@ my_queue = sqs.get_queue('myqueue') or sqs.create_queue('myqueue')
 
 for i in range(5):
     m = Message()
-    m.set_body('This is my %d-th message.' % i)
+    payload = {
+        'twit_id': i,
+        'text': 'This is my %d-th message.' % i
+    }
+    m.set_body(json.dumps(payload))
     # print vars(m)
     my_queue.write(m)
     # print vars(m)
@@ -23,9 +28,9 @@ for i in range(5):
 
 ms = my_queue.get_messages(10)
 for m in ms:
-    print m.get_body()
-    print m.id
-    print m.md5
+    print json.loads(m.get_body())
+    # print m.id
+    # print m.md5
     my_queue.delete_message(m)
 
 

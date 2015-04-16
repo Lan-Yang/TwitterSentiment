@@ -2,7 +2,6 @@ from gevent import monkey
 monkey.patch_all()
 
 import tweepy
-import re
 from flask import Flask, jsonify, render_template, request, session
 from flask.ext.socketio import SocketIO, emit
 from flask.ext.sqlalchemy import SQLAlchemy
@@ -48,38 +47,36 @@ socketio = SocketIO(app)
 
 # Daemon
 class CustomStreamListener(tweepy.StreamListener):
-    # splitter function
-    splitter = re.compile(r'\W+')
 
     def on_status(self, status):
         if not status.coordinates:
             return
         longitude, latitude = status.coordinates['coordinates']
-        text0 = status.text.encode('utf-8')
-        
-        # add new twit to db
-        words = filter(bool, self.splitter.split(text0))
+        text = status.text#.encode('utf-8')
+        # print type(status.text)
         time = status.created_at
-        text = ' '.join(words)
+
+        # add new twit to db
         twit = Twit(longitude=longitude, latitude=latitude, time=time, words=text)
         db.session.add(twit)
         db.session.commit()
-        
-        # add new message to sqs
+
+        # add new twit to sqs
         m = Message()
         sqs_m = {
-            'id':twit.twit_id,
-            'content':text
+            'id': twit.twit_id,
+            'content': text
         }
         m.set_body(json.dumps(sqs_m))
         my_queue.write(m)
 
-        print 'emit'
+        # emit new twit to client
         socketio.emit('twit', {
             'text': text,
             'longitude': longitude,
             'latitude': latitude,
-            'time': time
+            'time': time,
+            'id': twit.twit_id
             })
 
     def on_error(self, status_code):
@@ -92,15 +89,16 @@ class CustomStreamListener(tweepy.StreamListener):
 
 # Twitter Stream API
 def get_tweet():
+    auth = tweepy.OAuthHandler(twc.consumer_key, twc.consumer_secret)
+    auth.set_access_token(twc.access_token, twc.access_token_secret)
     while True:
         try:
-            auth = tweepy.OAuthHandler(twc.consumer_key, twc.consumer_secret)
-            auth.set_access_token(twc.access_token, twc.access_token_secret)
             sapi = tweepy.streaming.Stream(auth, CustomStreamListener())
             sapi.filter(locations=[-130, -60, 70, 60], track=words)
         except KeyboardInterrupt:  # on Ctrl-C, break
             break
-        except:
+        except BaseException as e:
+            # print e
             pass
 
 @app.before_first_request
@@ -113,9 +111,7 @@ def init():
 # main pages
 @app.route('/')
 def index():
-    # load keywords
-    payload = {'keywords': words}
-    return render_template('index.html', api_data=payload)
+    return render_template('index.html')
 
 @socketio.on('connect', namespace='')
 def test_connect():

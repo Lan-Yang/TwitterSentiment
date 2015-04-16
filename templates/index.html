@@ -22,26 +22,39 @@
   </style>
 </head>
 <body>
+  <div id="panel"><p>
+    Total number of twits: <i id="all">0</i>;
+    number of positive: <i id="pos">0</i>;
+    number of negative: <i id="neg">0</i>.
+  </p></div>
   <div id="map-canvas"></div>
-  <!-- <div id="log"></div> -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js" type="text/javascript"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js" type="text/javascript"></script>
   <script src="https://maps.googleapis.com/maps/api/js?libraries=visualization&sensor=true_or_false?key=AIzaSyAuDjoxQgamvdu8TMzot9wT9KFJmSvXPYg" type="text/javascript"></script>
   <script>
-  var map, pointarray, heatmap;
+  var map, heatmap;
+  var pointArray, idArray;
+  var nPos = 0, nNeg = 0;
   $(function(){
+    // sentiment panel
+    function setSentiment() {
+      $("#all").html(idArray.length);
+      $("#pos").html(nPos);
+      $("#neg").html(nNeg);
+    }
     // init heat map
     var mapOptions = {
-    zoom: 4,
-    center: new google.maps.LatLng(37.774546, -122.433523),
+      zoom: 4,
+      center: new google.maps.LatLng(37.774546, -122.433523),
       mapTypeId: google.maps.MapTypeId.ROADMAP
     };
     map = new google.maps.Map($('#map-canvas')[0], mapOptions);
-    pointarray = new google.maps.MVCArray([]);
+    pointArray = new google.maps.MVCArray([]);
     heatmap = new google.maps.visualization.HeatmapLayer({
-      data: pointarray
+      data: pointArray
     });
     heatmap.setMap(map);
+    idArray = []
     // connect websocket
     namespace = '';
     var socket = io.connect('http://' + document.domain + ':' + location.port + namespace);
@@ -49,7 +62,20 @@
       socket.emit('my event', {data: 'I\'m connected!'});
     });
     socket.on('twit', function(msg) {
-      pointarray.push(new google.maps.LatLng(msg.latitude, msg.longitude));
+      idArray.push(msg.id);
+      pointArray.push(new google.maps.LatLng(msg.latitude, msg.longitude));
+      // console.log(msg);
+      setSentiment();
+    });
+    socket.on('sentiment', function(msg) {
+      var tid = $.inArray(msg.id, idArray);
+      if (tid < 0) return;
+      if (msg.sentiment == 0) {  // 0 - negative, 1 - positive
+        nNeg += 1;
+      } else {
+        nPos += 1;
+      }
+      setSentiment();
       // console.log(msg);
     });
   });
