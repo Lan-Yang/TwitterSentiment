@@ -1,20 +1,3 @@
 words = [
-    'life',
-    'child',
-    'group',
-    'problem',
-    'fact',
-    'travel',
-    'art',
-    'family',
-    'thanks',
-    'music',
-    'data',
-    'food',
-    'love',
     'party',
-    'idea',
-    'activity',
-    'news',
-    'friend'
 ]
