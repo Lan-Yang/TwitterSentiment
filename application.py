@@ -53,6 +53,7 @@ socketio = SocketIO(app)
 
 # Daemon
 class CustomStreamListener(tweepy.StreamListener):
+    count = 0
 
     def on_status(self, status):
         if not status.coordinates:
@@ -62,9 +63,14 @@ class CustomStreamListener(tweepy.StreamListener):
         # print type(status.text)
         time = status.created_at
 
+        if count > 5000:
+            Twit.query.delete()
+            return True
+
         # add new twit to db
         twit = Twit(longitude=longitude, latitude=latitude, time=time, words=text)
         db.session.add(twit)
+        self.count += 1
         db.session.commit()
 
         # add new twit to sqs
