@@ -74,10 +74,12 @@
       // console.log(msg);
       var tid = $.inArray(msg.id, idArray);
       if (tid < 0) return;
-      if (msg.sentiment == 0) {  // 0 - negative, 1 - positive
+      if (msg.sentiment == "Negative") {  // 0 - negative, 1 - positive
         nNeg += 1;
-      } else {
+      } else if (msg.sentiment == "Positive") {
         nPos += 1;
+      } else {
+        nNeu += 1;
       }
       setSentiment();
     });
