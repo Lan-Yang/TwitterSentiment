@@ -101,21 +101,25 @@ def get_tweet():
             # print e
             pass
 
-@app.before_first_request
 def init():
     global daemon
     if not daemon:
         daemon = Thread(target=get_tweet)
         daemon.start()
 
+@app.before_first_request
+def init_bf_req():
+    init()
+
 # main pages
 @app.route('/')
 def index():
     return render_template('index.html')
 
-@socketio.on('connect', namespace='')
-def test_connect():
-    print 'Connected'
+@socketio.on('connect')
+def on_connect(data):
+    # print 'connect', data
+    init()
 
 # @app.route('/data/<word>')
 # def search(word):

@@ -56,10 +56,9 @@
     heatmap.setMap(map);
     idArray = []
     // connect websocket
-    namespace = '';
-    var socket = io.connect('http://' + document.domain + ':' + location.port + namespace);
+    var socket = io.connect('http://' + document.domain + ':' + location.port);
     socket.on('connect', function() {
-      socket.emit('my event', {data: 'I\'m connected!'});
+      socket.emit('connect', {data: 'I\'m connected!'});
     });
     socket.on('twit', function(msg) {
       idArray.push(msg.id);
