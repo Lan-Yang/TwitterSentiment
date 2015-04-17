@@ -16,6 +16,11 @@ import boto.sqs, boto.sns
 from boto.sqs.message import Message
 import json
 import time
+import logging
+
+FORMAT = r'%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+logging.basicConfig(stream=sys.stderr, level=logging.INFO, format=FORMAT)
+
 
 sqs = boto.sqs.connect_to_region(
         "us-east-1",
@@ -55,7 +60,8 @@ socket_count = 0
 
 # Daemon
 class CustomStreamListener(tweepy.StreamListener):
-    db_count = 0
+    # db_count = 0
+    twit_count = 0
     flag_stop = False
 
     def fake_stop(self):
@@ -70,21 +76,26 @@ class CustomStreamListener(tweepy.StreamListener):
         if self.flag_stop:
             return True
 
-        self.db_count += 1
+        # drop half twits
+        self.twit_count += 1
+        if self.twit_count % 2 == 0:
+            return True
+
+        # self.db_count += 1
         longitude, latitude = status.coordinates['coordinates']
         text = status.text#.encode('utf-8')
         # print type(status.text)
         time = status.created_at
 
-        if self.db_count > 50:
-            # Twit.query.delete()
-            # db.session.commit()
-            # return True
-            # add new twit to db
-            self.db_count = 0
-            twit = Twit(longitude=longitude, latitude=latitude, time=time, words=text)
-            db.session.add(twit)
-            db.session.commit()
+        # Twit.query.delete()
+        # db.session.commit()
+        # return True
+        # add new twit to db
+        # self.db_count = 0
+        # self.twit_count = 0
+        twit = Twit(longitude=longitude, latitude=latitude, time=time, words=text)
+        db.session.add(twit)
+        db.session.commit()
 
         # add new twit to sqs
         m = Message()
@@ -114,14 +125,18 @@ class CustomStreamListener(tweepy.StreamListener):
         print >> sys.stderr, '[tweepy] Timeout...'
         return True # Don't kill the stream
 
+    def on_disconnect(self, notice):
+        print >> sys.stderr, '[tweepy] Disconnect: %s' % notice
+        return True
+
 # Twitter Stream API
 listener = CustomStreamListener()
 
 def get_tweet():
-    auth = tweepy.OAuthHandler(twc.consumer_key, twc.consumer_secret)
-    auth.set_access_token(twc.access_token, twc.access_token_secret)
     while True:
         try:
+            auth = tweepy.OAuthHandler(twc.consumer_key, twc.consumer_secret)
+            auth.set_access_token(twc.access_token, twc.access_token_secret)
             sapi = tweepy.streaming.Stream(auth, listener)
             sapi.filter(locations=[-130, -60, 70, 60], track=words)
         except KeyboardInterrupt:  # on Ctrl-C, break
@@ -132,10 +147,11 @@ def get_tweet():
 
 def init():
     global daemon, listener
+    listener.fake_start()
     if not daemon:
         daemon = Thread(target=get_tweet)
+        logging.info("daemon start")
         daemon.start()
-    listener.fake_start()
 
 @app.before_first_request
 def init_bf_req():
@@ -150,13 +166,15 @@ def index():
 def on_connect(data):
     # print 'connect', data
     global socket_count
+    logging.info("connect")
     socket_count += 1
     init()
 
 @socketio.on('disconnect')
 def on_disconnect():
-    print('Client disconnected')
+    logging.info("disconnect")
     global listener, socket_count
+    socket_count -= 1
     if socket_count <= 0:
         listener.fake_stop()
 
