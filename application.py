@@ -15,6 +15,7 @@ import cred_aws
 import boto.sqs, boto.sns
 from boto.sqs.message import Message
 import json
+import time
 
 sqs = boto.sqs.connect_to_region(
         "us-east-1",
@@ -63,7 +64,7 @@ class CustomStreamListener(tweepy.StreamListener):
         # print type(status.text)
         time = status.created_at
 
-        if count > 5000:
+        if self.count > 5000:
             Twit.query.delete()
             db.session.commit()
             return True
@@ -94,6 +95,8 @@ class CustomStreamListener(tweepy.StreamListener):
 
     def on_error(self, status_code):
         print >> sys.stderr, 'Error with status code:', status_code
+        if status_code == 420:
+            time.sleep(60)
         return True # Don't kill the stream
 
     def on_timeout(self):
@@ -111,7 +114,7 @@ def get_tweet():
         except KeyboardInterrupt:  # on Ctrl-C, break
             break
         except BaseException as e:
-            # print e
+            print e
             pass
 
 def init():
