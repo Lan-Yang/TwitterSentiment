@@ -79,6 +79,8 @@ class CustomStreamListener(tweepy.StreamListener):
         # drop half twits
         self.twit_count += 1
         if self.twit_count % 2 == 0:
+            if self.twit_count > 10000:
+                self.twit_count = 0
             return True
 
         # self.db_count += 1
