@@ -180,19 +180,22 @@ def on_disconnect():
 @app.route('/sns', methods=['POST'])
 def sns_endpoint():
     '''http://160.39.7.94:5000/sns'''
-    data = json.loads(request.data)
-    logging.info("/sns: %s" % request.data)
-    if data['Type'] == 'SubscriptionConfirmation':
-        sns.confirm_subscription(topicarn, data['Token'])
-    elif data['Type'] == 'Notification':
-        msg = json.loads(data['Message'])
-        logging.info("emit sentiment %s" % msg['id'])
-        socketio.emit('sentiment', {
-            'id': msg['id'],
-            'sentiment': msg['senti']
-            })
-    # print request.data
-    return ""
+    try:
+        logging.info("/sns: %s" % request.data)
+        data = json.loads(request.data)
+        if data['Type'] == 'SubscriptionConfirmation':
+            sns.confirm_subscription(topicarn, data['Token'])
+        elif data['Type'] == 'Notification':
+            msg = json.loads(data['Message'])
+            logging.info("emit sentiment %s" % msg['id'])
+            socketio.emit('sentiment', {
+                'id': msg['id'],
+                'sentiment': msg['senti']
+                })
+        # print request.data
+        return ""
+    except BaseException as e:
+        logging.warning("Exception in /sns: %s" % e)
 
 # @app.route('/data/<word>')
 # def search(word):
