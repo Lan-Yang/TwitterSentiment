@@ -12,6 +12,7 @@ import os
 from word_list import words
 import cred_twitter as twc
 import cred_aws
+import cred_conf
 import boto.sqs, boto.sns
 from boto.sqs.message import Message
 import json
@@ -32,12 +33,11 @@ sns = boto.sns.connect_to_region(
         "us-east-1",
         aws_access_key_id=cred_aws.aws_access_key_id,
         aws_secret_access_key=cred_aws.aws_secret_access_key)
-topicarn = r"arn:aws:sns:us-east-1:239028447426:twit-senti"
+topicarn = cred_aws.aws_topicarn
 
 # Flask app object
 application = app = Flask(__name__)
-app.debug = True
-app.config['SECRET_KEY'] = 'adsf7678%*^&sdfg7wq'
+app.config.from_object(cred_conf)
 app.config['SQLALCHEMY_DATABASE_URI'] = cred_db.SQLALCHEMY_DATABASE_URI
 daemon = None
 
@@ -181,6 +181,7 @@ def on_disconnect():
 def sns_endpoint():
     '''http://160.39.7.94:5000/sns'''
     data = json.loads(request.data)
+    logging.info("/sns: %s" % request.data)
     if data['Type'] == 'SubscriptionConfirmation':
         sns.confirm_subscription(topicarn, data['Token'])
     elif data['Type'] == 'Notification':
