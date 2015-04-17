@@ -116,17 +116,17 @@ class CustomStreamListener(tweepy.StreamListener):
             })
 
     def on_error(self, status_code):
-        print >> sys.stderr, '[tweepy] Error with status code:', status_code
+        logging.warning('[tweepy] Error with status code:', status_code)
         if status_code == 420:
             time.sleep(60)
         return True # Don't kill the stream
 
     def on_timeout(self):
-        print >> sys.stderr, '[tweepy] Timeout...'
+        logging.warning('[tweepy] Timeout...')
         return True # Don't kill the stream
 
     def on_disconnect(self, notice):
-        print >> sys.stderr, '[tweepy] Disconnect: %s' % notice
+        logging.warning('[tweepy] Disconnect: %s' % notice)
         return True
 
 # Twitter Stream API
@@ -164,9 +164,8 @@ def index():
 
 @socketio.on('connect')
 def on_connect(data):
-    # print 'connect', data
-    global socket_count
     logging.info("connect")
+    global socket_count
     socket_count += 1
     init()
 
@@ -186,6 +185,7 @@ def sns_endpoint():
         sns.confirm_subscription(topicarn, data['Token'])
     elif data['Type'] == 'Notification':
         msg = json.loads(data['Message'])
+        logging.info("emit sentiment %s" % msg['id'])
         socketio.emit('sentiment', {
             'id': msg['id'],
             'sentiment': msg['senti']
