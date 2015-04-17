@@ -196,6 +196,7 @@ def sns_endpoint():
         return ""
     except BaseException as e:
         logging.warning("Exception in /sns: %s" % e)
+        return ("Exception in /sns: %s" % e)
 
 # @app.route('/data/<word>')
 # def search(word):
