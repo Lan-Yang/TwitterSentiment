@@ -33,7 +33,7 @@ sns = boto.sns.connect_to_region(
         "us-east-1",
         aws_access_key_id=cred_aws.aws_access_key_id,
         aws_secret_access_key=cred_aws.aws_secret_access_key)
-topicarn = cred_aws.aws_topicarn
+topicarn = cred_aws.aws_sns_topicarn
 
 # Flask app object
 application = app = Flask(__name__)
