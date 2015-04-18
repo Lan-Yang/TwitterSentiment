@@ -45,14 +45,24 @@
   var map, heatmap;
   var pointArray, idArray;
   var nPos = 0, nNeg = 0, nNeu = 0;
+  var data = google.visualization.arrayToDataTable([
+      ['Sentiment', 'Percentage'],
+      ['Positive',  11],
+      ['Negative',  2],
+      ['Neutral',   2],
+      ['Unkown',    10]
+    ]);
   $(function(){
     // sentiment panel
     function setSentiment() {
-      // dataTable.setCell(rowIndex, columnIndex, value);
       $("#all").html(idArray.length);
       $("#pos").html(nPos);
       $("#neg").html(nNeg);
       $("#neu").html(nNeu);
+      dataTable.setCell(0, 1, nPos);
+      dataTable.setCell(1, 1, nNeg);
+      dataTable.setCell(2, 1, nNeu);
+      dataTable.setCell(3, 1, idArray.length - nPos - nNeg - nNeu);
     }
     // init heat map
     var mapOptions = {
@@ -95,25 +105,12 @@
   google.load("visualization", "1", {packages:["corechart"]});
   google.setOnLoadCallback(drawChart);
   function drawChart() {
-
-    var data = google.visualization.arrayToDataTable([
-      ['Task', 'Hours per Day'],
-      ['Work',     11],
-      ['Eat',      2],
-      ['Commute',  2],
-      ['Watch TV', 2],
-      ['Sleep',    7]
-    ]);
-
     var options = {
-      title: 'My Daily Activities'
+      title: 'Twitter Sentiment'
     };
-
     var chart = new google.visualization.PieChart(document.getElementById('piechart'));
-
     chart.draw(data, options);
   }
-
   </script>
 </body>
 </html>
