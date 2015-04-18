@@ -13,7 +13,7 @@
     background: transparent;
     position: absolute;
     top: 5px;
-    height: 70%;
+    height: 100%;
     width: 20%;
     /*left: 30%;*/
     /*margin-left: -180px;*/
@@ -21,22 +21,23 @@
     padding: 5px;
     font-family: times;
   }
+  #piechart, #stat {
+    width: 100%;
+  }
   #piechart {
-    top: 300px;
-    width: 300px;
+    padding-top: 0px;
     height: 300px;
   }
-
   </style>
-
-  </script>
 </head>
 <body>
   <div id="panel">
-    <p>Total: <i id="all">0</i><p>
-    <p>Positive: <i id="pos">0</i></p>
-    <p>Negative: <i id="neg">0</i></p>
-    <p>Neural: <i id="neu">0</i></p>
+    <div id="stat">
+      <p>Total: <i id="all">0</i><p>
+      <p>Positive: <i id="pos">0</i></p>
+      <p>Negative: <i id="neg">0</i></p>
+      <p>Neural: <i id="neu">0</i></p>
+    </div>
     <div id="piechart"></div>
   </div>
   <div id="map-canvas"></div>
@@ -48,13 +49,7 @@
   var map, heatmap;
   var pointArray, idArray;
   var nPos = 0, nNeg = 0, nNeu = 0;
-  var data = google.visualization.arrayToDataTable([
-      ['Sentiment', 'Percentage'],
-      ['Positive',  3],
-      ['Negative',  2],
-      ['Neutral',   11],
-      ['Unkown',    10]
-    ]);
+  var dataTable = null;
   $(function(){
     // sentiment panel
     function setSentiment() {
@@ -62,16 +57,19 @@
       $("#pos").html(nPos);
       $("#neg").html(nNeg);
       $("#neu").html(nNeu);
-      dataTable.setCell(0, 1, nPos);
-      dataTable.setCell(1, 1, nNeg);
-      dataTable.setCell(2, 1, nNeu);
-      dataTable.setCell(3, 1, idArray.length - nPos - nNeg - nNeu);
+      if (dataTable) {
+        dataTable.setCell(0, 1, nPos);
+        dataTable.setCell(1, 1, nNeg);
+        dataTable.setCell(2, 1, nNeu);
+        dataTable.setCell(3, 1, idArray.length - nPos - nNeg - nNeu);
+      }
     }
     // init heat map
     var mapOptions = {
       zoom: 4,
       center: new google.maps.LatLng(37.774546, -122.433523),
-      mapTypeId: google.maps.MapTypeId.ROADMAP
+      mapTypeId: google.maps.MapTypeId.ROADMAP,
+      scrollwheel: false
     };
     map = new google.maps.Map($('#map-canvas')[0], mapOptions);
     pointArray = new google.maps.MVCArray([]);
@@ -107,15 +105,26 @@
   });
   google.load("visualization", "1", {packages:["corechart"]});
   google.setOnLoadCallback(drawChart);
+  var jPieChart = $('#piechart');
+  // var pt = $("#panel").height()-$("#stat").height()-jPieChart.height();
+  // console.log(pt);
+  // jPieChart.css({paddingTop: pt});
   function drawChart() {
+    dataTable = google.visualization.arrayToDataTable([
+      ['Sentiment', 'Percentage'],
+      ['Positive',  3],
+      ['Negative',  2],
+      ['Neutral',   11],
+      ['Unkown',    10]
+    ]);
     var options = {
       backgroundColor: 'transparent',
-      'width': 300,
-      legend : { position: 'bottom'},
-      'height': 300
+      width: jPieChart.width(),
+      height: jPieChart.height(),
+      legend : { position: 'bottom'}
     };
-    var chart = new google.visualization.PieChart(document.getElementById('piechart'));
-    chart.draw(data, options);
+    var chart = new google.visualization.PieChart(jPieChart[0]);
+    chart.draw(dataTable, options);
   }
   </script>
 </body>
