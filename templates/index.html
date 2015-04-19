@@ -57,11 +57,12 @@
       $("#pos").html(nPos);
       $("#neg").html(nNeg);
       $("#neu").html(nNeu);
-      if (dataTable) {
+      if (!!dataTable) {
         dataTable.setCell(0, 1, nPos);
         dataTable.setCell(1, 1, nNeg);
         dataTable.setCell(2, 1, nNeu);
         dataTable.setCell(3, 1, idArray.length - nPos - nNeg - nNeu);
+        drawChart();
       }
     }
     // init heat map
@@ -104,12 +105,22 @@
     });
   });
   google.load("visualization", "1", {packages:["corechart"]});
-  google.setOnLoadCallback(drawChart);
+  google.setOnLoadCallback(initChart);
   var jPieChart = $('#piechart');
   // var pt = $("#panel").height()-$("#stat").height()-jPieChart.height();
   // console.log(pt);
   // jPieChart.css({paddingTop: pt});
+  var chartOptions = {
+    backgroundColor: 'transparent',
+    width: jPieChart.width(),
+    height: jPieChart.height(),
+    legend : { position: 'bottom'}
+  };
+  var chart = null;
   function drawChart() {
+    chart.draw(dataTable, chartOptions);
+  }
+  function initChart() {
     dataTable = google.visualization.arrayToDataTable([
       ['Sentiment', 'Percentage'],
       ['Positive',  3],
@@ -117,14 +128,8 @@
       ['Neutral',   11],
       ['Unkown',    10]
     ]);
-    var options = {
-      backgroundColor: 'transparent',
-      width: jPieChart.width(),
-      height: jPieChart.height(),
-      legend : { position: 'bottom'}
-    };
-    var chart = new google.visualization.PieChart(jPieChart[0]);
-    chart.draw(dataTable, options);
+    chart = new google.visualization.PieChart(jPieChart[0]);
+    drawChart();
   }
   </script>
 </body>
