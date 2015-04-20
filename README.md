@@ -4,7 +4,8 @@ This is the web/app server for a twitter sentiment analysis app.
 
 ## Framework
 Server built with python flask framework. Weksocket is used for server-side
-pushing.
+pushing. The whole app is built in Docker, for easier deployment on Elastic
+Beanstalk.
 
 ## Twit Stream
 A daemon thread runing with the server collects twits. Every twit is inserted
